@@ -57,9 +57,11 @@ class MarketDataService:
             data = []
             for candle in ohlcv:
                 timestamp, open_price, high, low, close, volume = candle
+                # Format time for Lightweight Charts
+                time = datetime.fromtimestamp(timestamp / 1000).strftime("%Y-%m-%d")
                 data.append(
                     {
-                        "timestamp": timestamp,
+                        "time": time,
                         "open": open_price * cad_rate,
                         "high": high * cad_rate,
                         "low": low * cad_rate,

@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "react-query";
 import axios from "axios";
@@ -9,7 +11,11 @@ interface Message {
   components?: any[];
 }
 
-const ChatInterface: React.FC = () => {
+interface ChatInterfaceProps {
+  onAddComponent: (component: any) => void;
+}
+
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ onAddComponent }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -37,6 +43,13 @@ const ChatInterface: React.FC = () => {
             components: data.components,
           },
         ]);
+
+        // Add components to dashboard if any
+        if (data.components && data.components.length > 0) {
+          data.components.forEach((component: any) => {
+            onAddComponent(component);
+          });
+        }
       },
     }
   );

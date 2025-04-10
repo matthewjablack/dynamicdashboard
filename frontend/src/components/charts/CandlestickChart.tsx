@@ -14,6 +14,7 @@ import {
   CandlestickSeries,
   HistogramSeries,
 } from "lightweight-charts";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface CustomCandlestickData {
   time: string;
@@ -31,7 +32,6 @@ interface CandlestickChartProps {
   isLoading?: boolean;
   error?: string;
   height?: number;
-  isDarkMode?: boolean;
   onTimeframeChange?: (timeframe: string) => void;
 }
 
@@ -44,19 +44,18 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
   isLoading = false,
   error = "",
   height = 400,
-  isDarkMode = false,
   onTimeframeChange,
 }) => {
+  const { theme } = useTheme();
+  const isDarkMode = theme === "dark";
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candlestickSeriesRef = useRef<any>(null);
   const volumeSeriesRef = useRef<any>(null);
+
   // Set initial timeframe based on data interval
   const getInitialTimeframe = (): Timeframe => {
-    // If onTimeframeChange is provided, we can infer this is being used with HyperliquidChart
-    // In that case, try to determine the timeframe from the data
     if (data && data.length > 1) {
-      // Calculate time difference between first two points
       const time1 = parseInt(data[0].time);
       const time2 = parseInt(data[1].time);
       const diffMs = Math.abs(time2 - time1);
@@ -68,7 +67,7 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
       if (diffMinutes <= 1440) return "1d";
       if (diffMinutes <= 10080) return "1w";
     }
-    return "1d"; // Default to 1d if we can't determine
+    return "1d";
   };
 
   const [selectedTimeframe, setSelectedTimeframe] = useState<Timeframe>(getInitialTimeframe());
@@ -84,13 +83,17 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
   // Theme colors based on isDarkMode
-  const theme = useMemo(() => {
+  const chartTheme = useMemo(() => {
     return {
-      background: isDarkMode ? "#1E1E2D" : "white",
+      background: isDarkMode ? "#1a1a2e" : "white",
       textColor: isDarkMode ? "#D9D9D9" : "#191919",
       gridColor: isDarkMode ? "#2B2B43" : "#f0f0f0",
       upColor: "#26a69a",
       downColor: "#ef5350",
+      borderUpColor: "#26a69a",
+      borderDownColor: "#ef5350",
+      wickUpColor: "#26a69a",
+      wickDownColor: "#ef5350",
       tooltipBackground: isDarkMode ? "rgba(45, 45, 65, 0.9)" : "rgba(255, 255, 255, 0.9)",
       tooltipText: isDarkMode ? "#D9D9D9" : "#191919",
       tooltipBorder: isDarkMode ? "#3C3C50" : "#DCDCDC",
@@ -153,26 +156,23 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
   useEffect(() => {
     if (!chartContainerRef.current || isLoading || error || !data?.length) return;
 
-    // Clean up previous chart instance if it exists
     if (chartRef.current) {
       chartRef.current.remove();
       chartRef.current = null;
     }
 
-    // Determine chart height - use container height if height prop is undefined
     const chartHeight = height || chartContainerRef.current.clientHeight || 400;
 
-    // Chart configuration
     const chartOptions: DeepPartial<ChartOptions> = {
       layout: {
-        background: { type: ColorType.Solid, color: theme.background },
-        textColor: theme.textColor,
+        background: { type: ColorType.Solid, color: chartTheme.background },
+        textColor: chartTheme.textColor,
         fontFamily:
           '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif',
       },
       grid: {
-        vertLines: { visible: true, color: theme.gridColor, style: LineStyle.Dotted },
-        horzLines: { visible: true, color: theme.gridColor, style: LineStyle.Dotted },
+        vertLines: { visible: true, color: chartTheme.gridColor, style: LineStyle.Dotted },
+        horzLines: { visible: true, color: chartTheme.gridColor, style: LineStyle.Dotted },
       },
       crosshair: {
         mode: CrosshairMode.Normal,
@@ -220,13 +220,13 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
 
     // Create candlestick series using the correct API for lightweight-charts v5.0.5
     const candlestickSeries = chart.addSeries(CandlestickSeries, {
-      upColor: theme.upColor,
-      downColor: theme.downColor,
+      upColor: chartTheme.upColor,
+      downColor: chartTheme.downColor,
       borderVisible: true,
-      borderUpColor: theme.upColor,
-      borderDownColor: theme.downColor,
-      wickUpColor: theme.upColor,
-      wickDownColor: theme.downColor,
+      borderUpColor: chartTheme.borderUpColor,
+      borderDownColor: chartTheme.borderDownColor,
+      wickUpColor: chartTheme.wickUpColor,
+      wickDownColor: chartTheme.wickDownColor,
       priceFormat: {
         type: "price",
         precision: 2,
@@ -238,7 +238,7 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
     // Create volume series using the correct API for lightweight-charts v5.0.5
     // Using type assertion to handle the scaleMargins property
     const volumeSeries = chart.addSeries(HistogramSeries, {
-      color: theme.upColor,
+      color: chartTheme.upColor,
       priceFormat: {
         type: "volume",
       },
@@ -268,21 +268,24 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
       //   return acc;
       // }, []);
 
-      console.log('sortedData', sortedData);
+      console.log("sortedData", sortedData);
 
-      console.log('data', sortedData.map((d) => {
-        // Convert timestamp from milliseconds to seconds (TradingView format)
-        // Example: 1743953220000 -> 1743953220
-        const timestamp = Math.floor(parseInt(d.time) / 1000);
+      console.log(
+        "data",
+        sortedData.map((d) => {
+          // Convert timestamp from milliseconds to seconds (TradingView format)
+          // Example: 1743953220000 -> 1743953220
+          const timestamp = Math.floor(parseInt(d.time) / 1000);
 
-        return {
-          time: timestamp as Time,
-          open: d.open,
-          high: d.high,
-          low: d.low,
-          close: d.close,
-        };
-      }))
+          return {
+            time: timestamp as Time,
+            open: d.open,
+            high: d.high,
+            low: d.low,
+            close: d.close,
+          };
+        })
+      );
 
       // Set candlestick data
       candlestickSeriesRef.current.setData(
@@ -311,7 +314,7 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
           return {
             time: timestamp as Time,
             value: d.volume,
-            color: d.close >= d.open ? theme.upColor : theme.downColor,
+            color: d.close >= d.open ? chartTheme.upColor : chartTheme.downColor,
           };
         })
       );
@@ -378,7 +381,7 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
         const newHeight = height || chartContainerRef.current.clientHeight || 400;
         chartRef.current.applyOptions({
           width: chartContainerRef.current.clientWidth,
-          height: newHeight
+          height: newHeight,
         });
         chartRef.current.timeScale().fitContent();
       }
@@ -402,7 +405,7 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
         chartRef.current = null;
       }
     };
-  }, [data, isLoading, error, theme, height, isDarkMode]);
+  }, [data, isLoading, error, height, chartTheme, isDarkMode]);
 
   // Handle timeframe changes
   useEffect(() => {
@@ -417,12 +420,12 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
 
     chartRef.current.applyOptions({
       layout: {
-        background: { type: ColorType.Solid, color: theme.background },
-        textColor: theme.textColor,
+        background: { type: ColorType.Solid, color: chartTheme.background },
+        textColor: chartTheme.textColor,
       },
       grid: {
-        vertLines: { color: theme.gridColor },
-        horzLines: { color: theme.gridColor },
+        vertLines: { color: chartTheme.gridColor },
+        horzLines: { color: chartTheme.gridColor },
       },
       rightPriceScale: {
         borderColor: isDarkMode ? "#2B2B43" : "#D6DCDE",
@@ -432,30 +435,25 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
       },
     });
 
+    // Update candlestick colors
+    if (candlestickSeriesRef.current) {
+      candlestickSeriesRef.current.applyOptions({
+        upColor: chartTheme.upColor,
+        downColor: chartTheme.downColor,
+        borderUpColor: chartTheme.borderUpColor,
+        borderDownColor: chartTheme.borderDownColor,
+        wickUpColor: chartTheme.wickUpColor,
+        wickDownColor: chartTheme.wickDownColor,
+      });
+    }
+
     // Update volume colors
     if (volumeSeriesRef.current && data.length > 0) {
-      // Sort data by time in ascending order to avoid errors
-      const sortedData = [...data].sort((a, b) => parseInt(a.time) - parseInt(b.time));
-
-      // Make sure there are no duplicate timestamps
-      const uniqueData = sortedData.reduce((acc: CustomCandlestickData[], current) => {
-        const exists = acc.find(item => parseInt(item.time) === parseInt(current.time));
-        if (!exists) {
-          acc.push(current);
-        }
-        return acc;
-      }, []);
-
-      // Set volume data with sorted and deduplicated data
-      volumeSeriesRef.current.setData(
-        uniqueData.map((d) => ({
-          time: (parseInt(d.time) / 1000) as Time,
-          value: d.volume,
-          color: d.close >= d.open ? theme.upColor : theme.downColor,
-        }))
-      );
+      volumeSeriesRef.current.applyOptions({
+        color: (bar: any) => (bar.value >= 0 ? chartTheme.upColor : chartTheme.downColor),
+      });
     }
-  }, [isDarkMode, theme, data]);
+  }, [isDarkMode, chartTheme, data]);
 
   // Render loading state
   if (isLoading) {
@@ -463,33 +461,6 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
       <div className="w-full" style={{ height: `${height}px` }}>
         <div className="flex items-center justify-center h-full">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
-      </div>
-    );
-  }
-
-  // Render error state
-  if (error) {
-    return (
-      <div className="w-full" style={{ height: `${height}px` }}>
-        <div className="flex items-center justify-center h-full">
-          <div className="text-red-500">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-10 w-10 mb-2 mx-auto"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <p className="text-center">{error}</p>
-          </div>
         </div>
       </div>
     );
@@ -523,9 +494,9 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
   }
 
   return (
-    <div className="w-full h-full relative flex flex-col">
+    <div className={`w-full h-full relative flex flex-col ${isDarkMode ? "bg-gray-900" : "bg-white"}`}>
       <div className="flex justify-between items-center mb-2">
-        <div className="text-lg font-semibold">
+        <div className={`text-lg font-semibold ${isDarkMode ? "text-white" : "text-gray-900"}`}>
           {symbol} Price Chart ({currency})
         </div>
         <div className="flex space-x-1">
@@ -550,18 +521,22 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
       </div>
 
       <div className="relative flex-1 min-h-0">
-        <div ref={chartContainerRef} className="w-full h-full" style={height ? { height: `${height}px` } : { height: '100%' }} />
+        <div
+          ref={chartContainerRef}
+          className="w-full h-full"
+          style={height ? { height: `${height}px` } : { height: "100%" }}
+        />
 
         {/* Custom tooltip */}
         {tooltipVisible && tooltipData && (
           <div
-            className="absolute z-10 p-2 rounded shadow-lg pointer-events-none"
+            className={`absolute z-10 p-2 rounded shadow-lg pointer-events-none ${
+              isDarkMode ? "bg-gray-800 text-gray-200" : "bg-white text-gray-800"
+            }`}
             style={{
               left: `${tooltipPosition.x + 10}px`,
               top: `${tooltipPosition.y + 10}px`,
-              backgroundColor: theme.tooltipBackground,
-              color: theme.tooltipText,
-              border: `1px solid ${theme.tooltipBorder}`,
+              border: `1px solid ${isDarkMode ? "#3C3C50" : "#DCDCDC"}`,
               maxWidth: "200px",
               fontSize: "12px",
             }}
@@ -587,20 +562,22 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
       {data.length > 0 && (
         <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
           <div className={`p-2 rounded ${isDarkMode ? "bg-gray-800" : "bg-gray-100"}`}>
-            <div className="text-xs opacity-70">Open</div>
-            <div>{formatPrice(data[data.length - 1].open)}</div>
+            <div className={`text-xs opacity-70 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>Open</div>
+            <div className={isDarkMode ? "text-white" : "text-gray-900"}>{formatPrice(data[data.length - 1].open)}</div>
           </div>
           <div className={`p-2 rounded ${isDarkMode ? "bg-gray-800" : "bg-gray-100"}`}>
-            <div className="text-xs opacity-70">High</div>
-            <div>{formatPrice(data[data.length - 1].high)}</div>
+            <div className={`text-xs opacity-70 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>High</div>
+            <div className={isDarkMode ? "text-white" : "text-gray-900"}>{formatPrice(data[data.length - 1].high)}</div>
           </div>
           <div className={`p-2 rounded ${isDarkMode ? "bg-gray-800" : "bg-gray-100"}`}>
-            <div className="text-xs opacity-70">Low</div>
-            <div>{formatPrice(data[data.length - 1].low)}</div>
+            <div className={`text-xs opacity-70 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>Low</div>
+            <div className={isDarkMode ? "text-white" : "text-gray-900"}>{formatPrice(data[data.length - 1].low)}</div>
           </div>
           <div className={`p-2 rounded ${isDarkMode ? "bg-gray-800" : "bg-gray-100"}`}>
-            <div className="text-xs opacity-70">Volume</div>
-            <div>{formatVolume(data[data.length - 1].volume)}</div>
+            <div className={`text-xs opacity-70 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>Volume</div>
+            <div className={isDarkMode ? "text-white" : "text-gray-900"}>
+              {formatVolume(data[data.length - 1].volume)}
+            </div>
           </div>
         </div>
       )}

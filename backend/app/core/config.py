@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+from typing import Optional
 
 
 class Settings(BaseSettings):
@@ -18,6 +19,9 @@ class Settings(BaseSettings):
 
     # CORS
     BACKEND_CORS_ORIGINS: list = ["http://localhost:3000"]
+
+    # API Keys
+    TWITTER_API_KEY: str
 
     class Config:
         env_file = ".env"

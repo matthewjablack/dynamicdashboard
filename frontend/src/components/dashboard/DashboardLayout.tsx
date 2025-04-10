@@ -8,6 +8,8 @@ import ChatInterface from "../chat/ChatInterface";
 import CandlestickChart from "../charts/CandlestickChart";
 import { AddComponent } from "./AddComponent";
 import { componentRegistry, ComponentConfig } from "@/lib/componentRegistry";
+import { ThemeToggle } from "../ThemeToggle";
+import { useTheme } from "@/contexts/ThemeContext";
 
 // Create a properly typed responsive grid layout
 const ResponsiveGridLayout = WidthProvider(Responsive) as React.ComponentClass<ResponsiveProps>;
@@ -25,6 +27,7 @@ interface DashboardComponent extends ComponentConfig {
 }
 
 export const DashboardLayout: React.FC = () => {
+  const { theme } = useTheme();
   const [components, setComponents] = useState<DashboardComponent[]>([]);
   const [layouts, setLayouts] = useState<{ [key: string]: Layout[] }>({
     lg: [],
@@ -47,12 +50,12 @@ export const DashboardLayout: React.FC = () => {
     components.forEach((component, index) => {
       // Default layout if none specified
       const defaultLayout = {
-        x: (index % 3) * 4,  // Position in a grid, 3 columns
-        y: Math.floor(index / 3) * 4,  // Stack vertically when a row is filled
-        w: 4,  // Default width of 4 grid units
-        h: 4,  // Default height of 4 grid units
-        minW: 2,  // Minimum width
-        minH: 2,  // Minimum height
+        x: (index % 3) * 4, // Position in a grid, 3 columns
+        y: Math.floor(index / 3) * 4, // Stack vertically when a row is filled
+        w: 4, // Default width of 4 grid units
+        h: 4, // Default height of 4 grid units
+        minW: 2, // Minimum width
+        minH: 2, // Minimum height
       };
 
       const layout = component.layout || defaultLayout;
@@ -82,11 +85,11 @@ export const DashboardLayout: React.FC = () => {
       layout: {
         x: 0,
         y: 0,
-        w: component.type.includes('Chart') ? 6 : 4,  // Charts are wider by default
-        h: component.type.includes('Chart') ? 6 : 4,  // Charts are taller by default
+        w: component.type.includes("Chart") ? 6 : 4, // Charts are wider by default
+        h: component.type.includes("Chart") ? 6 : 4, // Charts are taller by default
         minW: 2,
         minH: 2,
-      }
+      },
     };
     setComponents((prev) => [...prev, newComponent]);
   };
@@ -145,8 +148,9 @@ export const DashboardLayout: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen">
-      <div className="w-1/4 border-r">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+      <ThemeToggle />
+      <div className="w-1/4 border-r dark:border-gray-700">
         <ChatInterface onAddComponent={handleAddComponent} />
       </div>
       <div className="flex-1 p-4 overflow-hidden">
@@ -166,13 +170,12 @@ export const DashboardLayout: React.FC = () => {
               isDraggable={true}
               isResizable={true}
               compactType="vertical"
-
             >
               {components.map((component) => renderComponent(component))}
             </ResponsiveGridLayout>
           ) : (
-            <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg">
-              <p className="text-gray-500">Add components to your dashboard using the form above</p>
+            <div className="flex items-center justify-center h-64 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <p className="text-gray-500 dark:text-gray-400">Add components to your dashboard using the form above</p>
             </div>
           )}
         </div>

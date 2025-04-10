@@ -1,11 +1,16 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api.routes import market_data, ai_chat, dashboard, hyperliquid
+from app.api.routes import market_data, ai_chat, dashboard, hyperliquid, twitter
 import logging
+import sys
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout), logging.FileHandler("app.log")],
+)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
@@ -37,6 +42,7 @@ app.include_router(market_data.router, prefix="/api/market-data", tags=["market-
 app.include_router(ai_chat.router, prefix="/api/chat", tags=["chat"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"])
 app.include_router(hyperliquid.router, prefix="/api/hyperliquid", tags=["hyperliquid"])
+app.include_router(twitter.router, prefix="/api/twitter", tags=["twitter"])
 
 
 @app.get("/")

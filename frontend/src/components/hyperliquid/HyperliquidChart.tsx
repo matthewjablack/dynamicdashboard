@@ -2,6 +2,7 @@ import React, { useState, useCallback } from "react";
 import { useQuery } from "react-query";
 import CandlestickChart from "../charts/CandlestickChart";
 import { marketDataApi } from "@/lib/api";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface HyperliquidChartProps {
   symbol: string;
@@ -16,6 +17,9 @@ export const HyperliquidChart: React.FC<HyperliquidChartProps> = ({
   limit = 5000,
   currency = "USD",
 }) => {
+  const { theme } = useTheme();
+  const isDarkMode = theme === "dark";
+
   // Use the provided interval without overriding it
   const [interval, setInterval] = useState(initialInterval);
   const {
@@ -74,17 +78,19 @@ export const HyperliquidChart: React.FC<HyperliquidChartProps> = ({
   );
 
   if (isLoading || !candles) {
-    return <div>Loading...</div>;
+    return <div className={`${isDarkMode ? "text-white" : "text-gray-900"}`}>Loading...</div>;
   }
 
   return (
-    <div className="p-4 bg-white rounded-lg shadow h-full w-full flex flex-col">
+    <div className={`p-4 rounded-lg shadow h-full w-full flex flex-col ${isDarkMode ? "bg-gray-800" : "bg-white"}`}>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">{symbol}</h2>
+        <h2 className={`text-xl font-bold ${isDarkMode ? "text-white" : "text-gray-900"}`}>{symbol}</h2>
         {marketData && marketData.markPx !== undefined && (
           <div className="text-right">
-            <div className="text-2xl font-bold">${Number(marketData.markPx).toFixed(2)}</div>
-            <div className="text-sm text-gray-500">
+            <div className={`text-2xl font-bold ${isDarkMode ? "text-white" : "text-gray-900"}`}>
+              ${Number(marketData.markPx).toFixed(2)}
+            </div>
+            <div className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
               Oracle Price: ${marketData.oraclePx !== undefined ? Number(marketData.oraclePx).toFixed(2) : "N/A"}
             </div>
           </div>
@@ -96,27 +102,26 @@ export const HyperliquidChart: React.FC<HyperliquidChartProps> = ({
           symbol={symbol}
           currency={currency}
           onTimeframeChange={handleTimeframeChange}
-          isDarkMode={false}
           isLoading={isLoading}
           height={undefined} // Let it fill the container
         />
       </div>
       {marketData && (
-        <div className="grid grid-cols-3 gap-4 mt-4">
+        <div className={`grid grid-cols-3 gap-4 mt-4 ${isDarkMode ? "text-gray-200" : "text-gray-800"}`}>
           <div className="text-center">
-            <div className="text-sm text-gray-500">Funding Rate</div>
+            <div className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>Funding Rate</div>
             <div className="text-lg font-semibold">
               {marketData.funding !== undefined ? `${(Number(marketData.funding) * 100).toFixed(4)}%` : "N/A"}
             </div>
           </div>
           <div className="text-center">
-            <div className="text-sm text-gray-500">Open Interest</div>
+            <div className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>Open Interest</div>
             <div className="text-lg font-semibold">
               {marketData.openInterest !== undefined ? `${Number(marketData.openInterest).toLocaleString()}` : "N/A"}
             </div>
           </div>
           <div className="text-center">
-            <div className="text-sm text-gray-500">24h Volume</div>
+            <div className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>24h Volume</div>
             <div className="text-lg font-semibold">
               {marketData.dayNtlVlm !== undefined ? `$${Number(marketData.dayNtlVlm).toLocaleString()}` : "N/A"}
             </div>

@@ -102,16 +102,46 @@ class HyperliquidService:
                 response.raise_for_status()
                 data = response.json()
 
+                logger.info(f"Received market data response: {data[:100]}...")
+
                 # Extract market data from the response
-                if len(data) >= 2 and isinstance(data[1], list):
-                    for asset in data[1]:
-                        if asset.get("name") == symbol.upper():
-                            return {
-                                "dayNtlVlm": asset.get("dayNtlVlm", "0"),
-                                "funding": asset.get("funding", "0"),
-                                "markPx": asset.get("markPx", "0"),
-                                "impactPxs": asset.get("impactPxs", []),
-                            }
+                if len(data) >= 2:
+                    universe = data[0].get("universe", [])
+                    asset_contexts = data[1]
+
+                    # Find the index of the requested symbol in the universe
+                    symbol_upper = symbol.upper()
+                    symbol_index = None
+
+                    for idx, asset_info in enumerate(universe):
+                        if asset_info.get("name") == symbol_upper:
+                            symbol_index = idx
+                            break
+
+                    # If we found the symbol and the index is valid for asset_contexts
+                    if symbol_index is not None and symbol_index < len(asset_contexts):
+                        asset = asset_contexts[symbol_index]
+
+                        # Safe conversion to float
+                        def safe_float(value, default=0.0):
+                            try:
+                                return float(value) if value is not None else default
+                            except (ValueError, TypeError):
+                                return default
+
+                        # Get previous day price for calculating change
+                        mark_price = safe_float(asset.get("markPx"))
+                        oracle_price = safe_float(asset.get("oraclePx"))
+
+                        return {
+                            "dayNtlVlm": asset.get("dayNtlVlm", "0"),
+                            "funding": asset.get("funding", "0"),
+                            "markPx": str(mark_price),
+                            "openInterest": asset.get("openInterest", "0"),
+                            "oraclePx": str(oracle_price),
+                            "premium": asset.get("premium", "0"),
+                        }
+
                 logger.warning(f"No market data found for symbol: {symbol}")
                 return {}
             except Exception as e:

@@ -18,7 +18,11 @@ export const HyperliquidChart: React.FC<HyperliquidChartProps> = ({
 }) => {
   // Use the provided interval without overriding it
   const [interval, setInterval] = useState(initialInterval);
-  const { data: candles, isLoading, refetch } = useQuery(
+  const {
+    data: candles,
+    isLoading,
+    refetch,
+  } = useQuery(
     ["hyperliquid-candles", symbol, interval, limit],
     () => marketDataApi.getHistoricalData(symbol, interval, limit),
     {
@@ -35,36 +39,39 @@ export const HyperliquidChart: React.FC<HyperliquidChartProps> = ({
       staleTime: 5000, // Consider data stale after 5 seconds
     }
   );
-  
+
   // Handle timeframe change
-  const handleTimeframeChange = useCallback((timeframe: string) => {
-    // Map timeframe to interval
-    let newInterval;
-    switch (timeframe) {
-      case "1h":
-        newInterval = "1h";
-        break;
-      case "4h":
-        newInterval = "4h";
-        break;
-      case "1d":
-        newInterval = "1d";
-        break;
-      case "1w":
-        newInterval = "1w";
-        break;
-      case "1m":
-        newInterval = "1m"; // Use 1m for minute view
-        break;
-      default:
-        newInterval = initialInterval; // Default to the initial interval
-    }
-    
-    if (newInterval !== interval) {
-      setInterval(newInterval);
-      // Data will be refetched automatically due to query key change
-    }
-  }, [interval]);
+  const handleTimeframeChange = useCallback(
+    (timeframe: string) => {
+      // Map timeframe to interval
+      let newInterval;
+      switch (timeframe) {
+        case "1h":
+          newInterval = "1h";
+          break;
+        case "4h":
+          newInterval = "4h";
+          break;
+        case "1d":
+          newInterval = "1d";
+          break;
+        case "1w":
+          newInterval = "1w";
+          break;
+        case "1m":
+          newInterval = "1m"; // Use 1m for minute view
+          break;
+        default:
+          newInterval = initialInterval; // Default to the initial interval
+      }
+
+      if (newInterval !== interval) {
+        setInterval(newInterval);
+        // Data will be refetched automatically due to query key change
+      }
+    },
+    [interval]
+  );
 
   if (isLoading || !candles) {
     return <div>Loading...</div>;
@@ -78,15 +85,15 @@ export const HyperliquidChart: React.FC<HyperliquidChartProps> = ({
           <div className="text-right">
             <div className="text-2xl font-bold">${Number(marketData.markPx).toFixed(2)}</div>
             <div className="text-sm text-gray-500">
-              24h Change: {marketData.prevDayPx !== undefined ? Number(marketData.prevDayPx).toFixed(2) : "N/A"}%
+              Oracle Price: ${marketData.oraclePx !== undefined ? Number(marketData.oraclePx).toFixed(2) : "N/A"}
             </div>
           </div>
         )}
       </div>
       <div className="flex-1 min-h-0">
-        <CandlestickChart 
-          data={candles} 
-          symbol={symbol} 
+        <CandlestickChart
+          data={candles}
+          symbol={symbol}
           currency={currency}
           onTimeframeChange={handleTimeframeChange}
           isDarkMode={false}
@@ -105,7 +112,7 @@ export const HyperliquidChart: React.FC<HyperliquidChartProps> = ({
           <div className="text-center">
             <div className="text-sm text-gray-500">Open Interest</div>
             <div className="text-lg font-semibold">
-              {marketData.openInterest !== undefined ? Number(marketData.openInterest).toLocaleString() : "N/A"}
+              {marketData.openInterest !== undefined ? `${Number(marketData.openInterest).toLocaleString()}` : "N/A"}
             </div>
           </div>
           <div className="text-center">

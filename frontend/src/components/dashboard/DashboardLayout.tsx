@@ -36,45 +36,49 @@ export const DashboardLayout: React.FC = () => {
     xs: [],
     xxs: [],
   });
+  const isInitialLayout = React.useRef(true);
 
   // Generate layout items from components
   useEffect(() => {
-    const newLayouts: { [key: string]: Layout[] } = {
-      lg: [],
-      md: [],
-      sm: [],
-      xs: [],
-      xxs: [],
-    };
-
-    components.forEach((component, index) => {
-      // Default layout if none specified
-      const defaultLayout = {
-        x: (index % 3) * 4, // Position in a grid, 3 columns
-        y: Math.floor(index / 3) * 4, // Stack vertically when a row is filled
-        w: 4, // Default width of 4 grid units
-        h: 4, // Default height of 4 grid units
-        minW: 2, // Minimum width
-        minH: 2, // Minimum height
+    if (isInitialLayout.current) {
+      const newLayouts: { [key: string]: Layout[] } = {
+        lg: [],
+        md: [],
+        sm: [],
+        xs: [],
+        xxs: [],
       };
 
-      const layout = component.layout || defaultLayout;
+      components.forEach((component, index) => {
+        // Default layout if none specified
+        const defaultLayout = {
+          x: (index % 3) * 4, // Position in a grid, 3 columns
+          y: Math.floor(index / 3) * 4, // Stack vertically when a row is filled
+          w: 4, // Default width of 4 grid units
+          h: 4, // Default height of 4 grid units
+          minW: 2, // Minimum width
+          minH: 2, // Minimum height
+        };
 
-      // Add layout for each breakpoint
-      Object.keys(newLayouts).forEach((breakpoint) => {
-        newLayouts[breakpoint].push({
-          i: component.id,
-          x: layout.x,
-          y: layout.y,
-          w: layout.w,
-          h: layout.h,
-          minW: layout.minW || 2,
-          minH: layout.minH || 2,
+        const layout = component.layout || defaultLayout;
+
+        // Add layout for each breakpoint
+        Object.keys(newLayouts).forEach((breakpoint) => {
+          newLayouts[breakpoint].push({
+            i: component.id,
+            x: layout.x,
+            y: layout.y,
+            w: layout.w,
+            h: layout.h,
+            minW: layout.minW || 2,
+            minH: layout.minH || 2,
+          });
         });
       });
-    });
 
-    setLayouts(newLayouts);
+      setLayouts(newLayouts);
+      isInitialLayout.current = false;
+    }
   }, [components]);
 
   const handleAddComponent = (component: ComponentConfig) => {
@@ -99,29 +103,28 @@ export const DashboardLayout: React.FC = () => {
   };
 
   const handleLayoutChange = (currentLayout: Layout[], allLayouts: { [key: string]: Layout[] }) => {
-    // Update component layouts based on the changed layout
-    setLayouts(allLayouts);
-
-    // Update the components with their new layout positions
-    setComponents((prevComponents) => {
-      return prevComponents.map((component) => {
-        const layoutItem = currentLayout.find((item) => item.i === component.id);
-        if (layoutItem) {
-          return {
-            ...component,
-            layout: {
-              x: layoutItem.x,
-              y: layoutItem.y,
-              w: layoutItem.w,
-              h: layoutItem.h,
-              minW: layoutItem.minW,
-              minH: layoutItem.minH,
-            },
-          };
-        }
-        return component;
+    // Only update components if this is not the initial layout
+    if (!isInitialLayout.current) {
+      setComponents((prevComponents) => {
+        return prevComponents.map((component) => {
+          const layoutItem = currentLayout.find((item) => item.i === component.id);
+          if (layoutItem) {
+            return {
+              ...component,
+              layout: {
+                x: layoutItem.x,
+                y: layoutItem.y,
+                w: layoutItem.w,
+                h: layoutItem.h,
+                minW: layoutItem.minW,
+                minH: layoutItem.minH,
+              },
+            };
+          }
+          return component;
+        });
       });
-    });
+    }
   };
 
   const renderComponent = (component: DashboardComponent) => {

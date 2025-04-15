@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api.routes import market_data, ai_chat, dashboard, hyperliquid, twitter
+from app.api.routes import market_data, ai_chat, dashboard, hyperliquid, twitter, ccxt
 import logging
 import sys
 
@@ -43,6 +43,7 @@ app.include_router(ai_chat.router, prefix="/api/chat", tags=["chat"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"])
 app.include_router(hyperliquid.router, prefix="/api/hyperliquid", tags=["hyperliquid"])
 app.include_router(twitter.router, prefix="/api/twitter", tags=["twitter"])
+app.include_router(ccxt.router, prefix="/api/ccxt", tags=["ccxt"])
 
 
 @app.get("/")

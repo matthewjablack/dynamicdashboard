@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { useQuery } from "react-query";
-import CandlestickChart from "../charts/CandlestickChart";
+import { CandlestickChart } from "../charts/CandlestickChart";
 import { marketDataApi } from "@/lib/api";
 import { useTheme } from "@/contexts/ThemeContext";
 
@@ -84,7 +84,10 @@ export const HyperliquidChart: React.FC<HyperliquidChartProps> = ({
   return (
     <div className={`p-4 rounded-lg shadow h-full w-full flex flex-col ${isDarkMode ? "bg-gray-800" : "bg-white"}`}>
       <div className="flex justify-between items-center mb-4">
-        <h2 className={`text-xl font-bold ${isDarkMode ? "text-white" : "text-gray-900"}`}>{symbol}</h2>
+        <div className="flex items-center gap-2 select-none">
+          <div className="drag-handle cursor-move text-gray-400 hover:text-gray-600">⋮⋮</div>
+          <h2 className={`text-xl font-bold ${isDarkMode ? "text-white" : "text-gray-900"}`}>{symbol}</h2>
+        </div>
         {marketData && marketData.markPx !== undefined && (
           <div className="text-right">
             <div className={`text-2xl font-bold ${isDarkMode ? "text-white" : "text-gray-900"}`}>

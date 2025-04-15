@@ -37,7 +37,7 @@ interface CandlestickChartProps {
 
 type Timeframe = "1h" | "4h" | "1d" | "1w" | "1m";
 
-const CandlestickChart: React.FC<CandlestickChartProps> = ({
+export const CandlestickChart: React.FC<CandlestickChartProps> = ({
   data,
   symbol,
   currency,
@@ -584,5 +584,3 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({
     </div>
   );
 };
-
-export default CandlestickChart;

@@ -1,5 +1,5 @@
 import os
-from typing import List, Optional
+from typing import List, Optional, Dict
 import requests
 from datetime import datetime, timedelta
 import logging
@@ -25,14 +25,23 @@ class TwitterService:
             return datetime.min
 
     def get_user_tweets(
-        self, usernames: List[str], limit: int = 10, hours: Optional[int] = None
+        self,
+        usernames: List[str],
+        limit: int = 10,
+        hours: Optional[int] = None,
+        filters: Optional[Dict[str, List[str]]] = None,
     ) -> List[dict]:
         """
-        Get tweets from multiple users with optional time filtering
+        Get tweets from multiple users with optional time filtering and content filtering
+        Args:
+            usernames: List of Twitter usernames to fetch tweets from
+            limit: Maximum number of tweets to return
+            hours: Optional time filter in hours
+            filters: Optional dictionary mapping usernames to lists of keywords to filter by
         """
         try:
             logger.info(
-                f"Fetching tweets for usernames: {usernames}, limit: {limit}, hours: {hours}"
+                f"Fetching tweets for usernames: {usernames}, limit: {limit}, hours: {hours}, filters: {filters}"
             )
             headers = {"X-API-Key": self.api_key}
             logger.debug(f"Request headers: {headers}")
@@ -87,6 +96,15 @@ class TwitterService:
                 # Transform tweets to match expected format
                 transformed_tweets = []
                 for tweet in tweets:
+                    # Apply filters if they exist for this username
+                    if filters and username in filters:
+                        keywords = filters[username]
+                        tweet_text = tweet["text"].lower()
+                        if not any(
+                            keyword.lower() in tweet_text for keyword in keywords
+                        ):
+                            continue
+
                     transformed_tweet = {
                         "id": tweet["id"],
                         "text": tweet["text"],

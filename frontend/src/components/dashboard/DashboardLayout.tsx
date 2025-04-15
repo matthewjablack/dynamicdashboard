@@ -5,7 +5,7 @@ import { Responsive, WidthProvider, Layout, ResponsiveProps } from "react-grid-l
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import ChatInterface from "../chat/ChatInterface";
-import CandlestickChart from "../charts/CandlestickChart";
+import { CandlestickChart } from "../charts/CandlestickChart";
 import { AddComponent } from "./AddComponent";
 import { componentRegistry, ComponentConfig } from "@/lib/componentRegistry";
 import { ThemeToggle } from "../ThemeToggle";
@@ -103,28 +103,8 @@ export const DashboardLayout: React.FC = () => {
   };
 
   const handleLayoutChange = (currentLayout: Layout[], allLayouts: { [key: string]: Layout[] }) => {
-    // Only update components if this is not the initial layout
-    if (!isInitialLayout.current) {
-      setComponents((prevComponents) => {
-        return prevComponents.map((component) => {
-          const layoutItem = currentLayout.find((item) => item.i === component.id);
-          if (layoutItem) {
-            return {
-              ...component,
-              layout: {
-                x: layoutItem.x,
-                y: layoutItem.y,
-                w: layoutItem.w,
-                h: layoutItem.h,
-                minW: layoutItem.minW,
-                minH: layoutItem.minH,
-              },
-            };
-          }
-          return component;
-        });
-      });
-    }
+    // Only update the layouts state
+    setLayouts(allLayouts);
   };
 
   const renderComponent = (component: DashboardComponent) => {
@@ -151,16 +131,16 @@ export const DashboardLayout: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
       <ThemeToggle />
       <div className="w-1/4 border-r dark:border-gray-700">
         <ChatInterface onAddComponent={handleAddComponent} />
       </div>
-      <div className="flex-1 p-4 overflow-hidden">
-        <div className="mb-4">
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <div className="p-4">
           <AddComponent onAdd={handleAddComponent} />
         </div>
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 p-4 overflow-y-auto">
           {components.length > 0 ? (
             <ResponsiveGridLayout
               className="layout"
@@ -173,6 +153,8 @@ export const DashboardLayout: React.FC = () => {
               isDraggable={true}
               isResizable={true}
               compactType="vertical"
+              draggableHandle=".drag-handle"
+              style={{ minHeight: "100%" }}
             >
               {components.map((component) => renderComponent(component))}
             </ResponsiveGridLayout>

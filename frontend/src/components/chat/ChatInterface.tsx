@@ -32,8 +32,24 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onAddComponent }) => {
 
   const { mutate: sendMessage, isLoading } = useMutation(
     async (message: string) => {
-      const response = await axios.post("/api/chat", { message });
-      return response.data;
+      // Simulate API call with a delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Mock response
+      return {
+        message: "I'll add a ETH price chart to your dashboard.",
+        components: [
+          {
+            type: "HyperliquidChart",
+            props: {
+              symbol: "ETH",
+              interval: "1m",
+              limit: 5000,
+              currency: "USD",
+            },
+          },
+        ],
+      };
     },
     {
       onSuccess: (data) => {

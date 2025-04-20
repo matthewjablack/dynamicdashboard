@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getUserTweets } from "@/lib/twitter";
 
 interface Tweet {
@@ -48,16 +48,14 @@ export const TwitterFeed: React.FC<TwitterFeedProps> = ({
 
   const {
     data: tweets,
-    isLoading,
+    isPending,
     error,
     refetch,
-  } = useQuery<Tweet[]>(
-    ["tweets", usernameArray.join(","), hoursAgo, filters],
-    () => getUserTweets(usernameArray, limit, hoursAgo, filters),
-    {
-      refetchInterval: 60000, // Refetch every minute
-    }
-  );
+  } = useQuery<Tweet[]>({
+    queryKey: ["tweets", usernameArray.join(","), hoursAgo, filters],
+    queryFn: () => getUserTweets(usernameArray, limit, hoursAgo, filters),
+    refetchInterval: 60000, // Refetch every minute
+  });
 
   const handleFilterSave = () => {
     const newFilters: Record<string, string[]> = {};
@@ -96,7 +94,7 @@ export const TwitterFeed: React.FC<TwitterFeedProps> = ({
     return value.toString();
   };
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div className={`flex items-center justify-center h-full ${isDarkMode ? "text-white" : "text-gray-900"}`}>
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>

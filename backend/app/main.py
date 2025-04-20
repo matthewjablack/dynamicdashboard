@@ -15,7 +15,7 @@ import sys
 
 # Configure logging
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,  # Set default level to INFO
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.StreamHandler(sys.stdout),
@@ -24,11 +24,13 @@ logging.basicConfig(
 )
 
 # Set log levels for specific modules
-logging.getLogger("app.api").setLevel(logging.DEBUG)
-logging.getLogger("app.api.services").setLevel(logging.DEBUG)
-logging.getLogger("app.api.routes").setLevel(logging.DEBUG)
+logging.getLogger("app.api").setLevel(logging.INFO)
+logging.getLogger("app.api.services").setLevel(logging.INFO)
+logging.getLogger("app.api.routes").setLevel(logging.INFO)
 logging.getLogger("uvicorn").setLevel(logging.INFO)
 logging.getLogger("fastapi").setLevel(logging.INFO)
+logging.getLogger("ccxt").setLevel(logging.INFO)  # Prevent CCXT debug logs
+logging.getLogger("urllib3").setLevel(logging.INFO)  # Prevent urllib3 debug logs
 
 logger = logging.getLogger(__name__)
 

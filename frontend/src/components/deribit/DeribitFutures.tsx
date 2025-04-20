@@ -1,6 +1,6 @@
 import React from "react";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 
 interface FuturesData {
@@ -31,19 +31,17 @@ export const DeribitFutures: React.FC<DeribitFuturesProps> = ({ symbol = "BTC" }
 
   const {
     data: futuresData,
-    isLoading,
+    isPending,
     error,
-  } = useQuery<FuturesData[]>(
-    ["deribit-futures", symbol],
-    async () => {
+  } = useQuery({
+    queryKey: ["deribit-futures", symbol],
+    queryFn: async (): Promise<FuturesData[]> => {
       const response = await api.get(`/api/deribit/futures/${symbol}`);
       return response.data;
     },
-    {
-      refetchInterval: 10000, // Refetch every 10 seconds
-      staleTime: 5000, // Consider data stale after 5 seconds
-    }
-  );
+    refetchInterval: 10000, // Refetch every 10 seconds
+    staleTime: 5000, // Consider data stale after 5 seconds
+  });
 
   const formatNumber = (value: number, decimals: number = 2, prefix: string = "") => {
     if (value >= 1_000_000) {
@@ -54,7 +52,7 @@ export const DeribitFutures: React.FC<DeribitFuturesProps> = ({ symbol = "BTC" }
     return `${prefix}${value.toFixed(decimals)}`;
   };
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <div
         className={`p-4 rounded-lg shadow h-full w-full flex items-center justify-center ${
@@ -101,7 +99,7 @@ export const DeribitFutures: React.FC<DeribitFuturesProps> = ({ symbol = "BTC" }
             </tr>
           </thead>
           <tbody>
-            {futuresData?.map((row) => (
+            {futuresData?.map((row: FuturesData) => (
               <tr
                 key={row.instrument}
                 className={`text-sm ${isDarkMode ? "text-gray-200" : "text-gray-800"} border-b ${

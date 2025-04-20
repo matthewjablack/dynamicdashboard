@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { componentRegistry, ComponentConfig, ComponentField } from "@/lib/componentRegistry";
 import { api } from "@/lib/api";
 import { useTheme } from "@/contexts/ThemeContext";
-import { AxiosResponse } from "axios";
+import { useQuery } from "@tanstack/react-query";
 
 interface Market {
   symbol: string;
@@ -19,9 +19,38 @@ export const AddComponent: React.FC<AddComponentProps> = ({ onAdd }) => {
   const { theme } = useTheme();
   const [selectedType, setSelectedType] = useState<string>("");
   const [config, setConfig] = useState<Record<string, any>>({});
-  const [exchanges, setExchanges] = useState<string[]>([]);
-  const [markets, setMarkets] = useState<Market[]>([]);
-  const [loading, setLoading] = useState(false);
+
+  // Fetch exchanges
+  const {
+    data: exchanges = [],
+    isLoading: isLoadingExchanges,
+    error: exchangesError,
+  } = useQuery({
+    queryKey: ["ccxt-exchanges"],
+    queryFn: async () => {
+      const response = await api.get<string[]>("/api/ccxt/exchanges");
+      return response.data;
+    },
+    enabled: selectedType === "CCXTChart",
+    retry: 1,
+    staleTime: 300000, // Cache for 5 minutes
+  });
+
+  // Fetch markets
+  const {
+    data: markets = [],
+    isLoading: isLoadingMarkets,
+    error: marketsError,
+  } = useQuery({
+    queryKey: ["ccxt-markets", config.exchange],
+    queryFn: async () => {
+      const response = await api.get<Market[]>(`/api/ccxt/exchanges/${config.exchange}/markets`);
+      return response.data;
+    },
+    enabled: selectedType === "CCXTChart" && !!config.exchange,
+    retry: 1,
+    staleTime: 60000, // Cache for 1 minute
+  });
 
   useEffect(() => {
     // Reset config when component type changes
@@ -33,42 +62,6 @@ export const AddComponent: React.FC<AddComponentProps> = ({ onAdd }) => {
       setConfig(defaultConfig);
     }
   }, [selectedType]);
-
-  // Fetch available exchanges when adding a CCXT chart
-  useEffect(() => {
-    if (selectedType === "CCXTChart") {
-      setLoading(true);
-      api
-        .get<string[]>("/api/ccxt/exchanges")
-        .then((response: AxiosResponse<string[]>) => {
-          setExchanges(response.data);
-        })
-        .catch((error: Error) => {
-          console.error("Failed to fetch exchanges:", error);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    }
-  }, [selectedType]);
-
-  // Fetch available markets when exchange is selected
-  useEffect(() => {
-    if (selectedType === "CCXTChart" && config.exchange) {
-      setLoading(true);
-      api
-        .get<Market[]>(`/api/ccxt/exchanges/${config.exchange}/markets`)
-        .then((response: AxiosResponse<Market[]>) => {
-          setMarkets(response.data);
-        })
-        .catch((error: Error) => {
-          console.error("Failed to fetch markets:", error);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    }
-  }, [selectedType, config.exchange]);
 
   const handleTypeChange = (type: string) => {
     setSelectedType(type);
@@ -92,41 +85,49 @@ export const AddComponent: React.FC<AddComponentProps> = ({ onAdd }) => {
   const renderField = (field: ComponentField) => {
     if (field.name === "exchange" && selectedType === "CCXTChart") {
       return (
-        <select
-          key={field.name}
-          value={config[field.name] || ""}
-          onChange={(e) => handleConfigChange(field.name, e.target.value)}
-          className={`mt-1 block w-full rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 ${
-            theme === "dark" ? "bg-gray-700 text-white border-gray-600" : "border-gray-300"
-          }`}
-        >
-          <option value="">Select an exchange</option>
-          {exchanges.map((exchange) => (
-            <option key={exchange} value={exchange}>
-              {exchange}
-            </option>
-          ))}
-        </select>
+        <div>
+          <select
+            key={field.name}
+            value={config[field.name] || ""}
+            onChange={(e) => handleConfigChange(field.name, e.target.value)}
+            className={`mt-1 block w-full rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 ${
+              theme === "dark" ? "bg-gray-700 text-white border-gray-600" : "border-gray-300"
+            }`}
+            disabled={isLoadingExchanges}
+          >
+            <option value="">Select an exchange</option>
+            {exchanges.map((exchange) => (
+              <option key={exchange} value={exchange}>
+                {exchange}
+              </option>
+            ))}
+          </select>
+          {exchangesError && <p className="mt-1 text-sm text-red-500">Error loading exchanges. Please try again.</p>}
+        </div>
       );
     }
 
     if (field.name === "symbol" && selectedType === "CCXTChart") {
       return (
-        <select
-          key={field.name}
-          value={config[field.name] || ""}
-          onChange={(e) => handleConfigChange(field.name, e.target.value)}
-          className={`mt-1 block w-full rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 ${
-            theme === "dark" ? "bg-gray-700 text-white border-gray-600" : "border-gray-300"
-          }`}
-        >
-          <option value="">Select a trading pair</option>
-          {markets.map((market) => (
-            <option key={market.symbol} value={market.symbol}>
-              {market.symbol} ({market.base}/{market.quote})
-            </option>
-          ))}
-        </select>
+        <div>
+          <select
+            key={field.name}
+            value={config[field.name] || ""}
+            onChange={(e) => handleConfigChange(field.name, e.target.value)}
+            className={`mt-1 block w-full rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 ${
+              theme === "dark" ? "bg-gray-700 text-white border-gray-600" : "border-gray-300"
+            }`}
+            disabled={isLoadingMarkets || !config.exchange}
+          >
+            <option value="">Select a trading pair</option>
+            {markets.map((market) => (
+              <option key={market.symbol} value={market.symbol}>
+                {market.symbol} ({market.base}/{market.quote})
+              </option>
+            ))}
+          </select>
+          {marketsError && <p className="mt-1 text-sm text-red-500">Error loading markets. Please try again.</p>}
+        </div>
       );
     }
 
@@ -198,15 +199,20 @@ export const AddComponent: React.FC<AddComponentProps> = ({ onAdd }) => {
                 {renderField(field)}
               </div>
             ))}
-            <button
-              onClick={handleAdd}
-              disabled={loading}
-              className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors duration-200 disabled:opacity-50"
-            >
-              Add Component
-            </button>
           </div>
         )}
+
+        <button
+          onClick={handleAdd}
+          disabled={!selectedType || isLoadingExchanges || isLoadingMarkets}
+          className={`w-full py-2 px-4 rounded-md ${
+            !selectedType || isLoadingExchanges || isLoadingMarkets
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-blue-500 hover:bg-blue-600"
+          } text-white focus:outline-none focus:ring-2 focus:ring-blue-500`}
+        >
+          Add Component
+        </button>
       </div>
     </div>
   );

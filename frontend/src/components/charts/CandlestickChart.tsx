@@ -260,40 +260,19 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
       const sortedData = [...data].sort((a, b) => parseInt(a.time) - parseInt(b.time));
 
       // Make sure there are no duplicate timestamps
-      // const uniqueData = sortedData.reduce((acc: CustomCandlestickData[], current) => {
-      //   const exists = acc.find(item => parseInt(item.time) === parseInt(current.time));
-      //   if (!exists) {
-      //     acc.push(current);
-      //   }
-      //   return acc;
-      // }, []);
-
-      console.log("sortedData", sortedData);
-
-      console.log(
-        "data",
-        sortedData.map((d) => {
-          // Convert timestamp from milliseconds to seconds (TradingView format)
-          // Example: 1743953220000 -> 1743953220
-          const timestamp = Math.floor(parseInt(d.time) / 1000);
-
-          return {
-            time: timestamp as Time,
-            open: d.open,
-            high: d.high,
-            low: d.low,
-            close: d.close,
-          };
-        })
-      );
+      const uniqueData = sortedData.reduce((acc: CustomCandlestickData[], current) => {
+        const exists = acc.find((item) => parseInt(item.time) === parseInt(current.time));
+        if (!exists) {
+          acc.push(current);
+        }
+        return acc;
+      }, []);
 
       // Set candlestick data
       candlestickSeriesRef.current.setData(
-        sortedData.map((d) => {
+        uniqueData.map((d) => {
           // Convert timestamp from milliseconds to seconds (TradingView format)
-          // Example: 1743953220000 -> 1743953220
           const timestamp = Math.floor(parseInt(d.time) / 1000);
-
           return {
             time: timestamp as Time,
             open: d.open,
@@ -306,11 +285,9 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
 
       // Set volume data
       volumeSeriesRef.current.setData(
-        sortedData.map((d) => {
+        uniqueData.map((d) => {
           // Convert timestamp from milliseconds to seconds (TradingView format)
-          // Example: 1743953220000 -> 1743953220
           const timestamp = Math.floor(parseInt(d.time) / 1000);
-
           return {
             time: timestamp as Time,
             value: d.volume,
@@ -319,15 +296,8 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
         })
       );
 
-      // Set visible range to show more candles (adjust based on data size)
-      // const visibleRange = Math.min(Math.max(sortedData.length * 0.8, 10), sortedData.length);
-      // if (sortedData.length > 1) {
-      //   // Ensure we're showing at least 80% of available candles, but not less than 10
-      //   chart.timeScale().setVisibleRange({
-      //     from: (parseInt(sortedData[Math.max(0, sortedData.length - visibleRange)].time) / 1000) as Time,
-      //     to: (parseInt(sortedData[sortedData.length - 1].time) / 1000) as Time,
-      //   });
-      // }
+      // Set visible range to show all candles
+      chart.timeScale().fitContent();
     }
 
     // Add crosshair move handler for tooltip

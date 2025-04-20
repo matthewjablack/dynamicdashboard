@@ -11,7 +11,7 @@ interface CCXTChartProps {
 }
 
 interface OHLCVData {
-  time: number;
+  time: string; // Changed to string to match CandlestickChart's expected format
   open: number;
   high: number;
   low: number;
@@ -25,74 +25,58 @@ export const CCXTChart: React.FC<CCXTChartProps> = ({ exchange, symbol, timefram
   const [timeframe, setTimeframe] = useState(initialTimeframe);
   const [filters, setFilters] = useState("");
 
-  const { data, isLoading, error } = useQuery({
+  const { data, error, isLoading } = useQuery({
     queryKey: ["ccxt-ohlcv", exchange, symbol, timeframe],
     queryFn: async () => {
-      const response = await api.get(`/ccxt/exchanges/${exchange}/ohlcv`, {
+      const response = await api.get(`/api/ccxt/exchanges/${exchange}/ohlcv`, {
         params: {
           symbol,
           timeframe,
-          filters: filters.trim() ? filters.split(",").map((f) => f.trim()) : undefined,
+          limit: 1000,
         },
       });
       return response.data;
     },
+    enabled: !!exchange && !!symbol,
     refetchInterval: 60000, // Refetch every minute
+    staleTime: 30000, // Consider data stale after 30 seconds
+    retry: 1,
   });
 
   // Handle timeframe change
-  const handleTimeframeChange = useCallback(
-    (newTimeframe: string) => {
-      // Map timeframe to interval
-      let selectedTimeframe;
-      switch (newTimeframe) {
-        case "1h":
-          selectedTimeframe = "1h";
-          break;
-        case "4h":
-          selectedTimeframe = "4h";
-          break;
-        case "1d":
-          selectedTimeframe = "1d";
-          break;
-        case "1w":
-          selectedTimeframe = "1w";
-          break;
-        case "1m":
-          selectedTimeframe = "1m"; // Use 1m for minute view
-          break;
-        default:
-          selectedTimeframe = initialTimeframe; // Default to the initial timeframe
-      }
-
-      if (selectedTimeframe !== timeframe) {
-        setTimeframe(selectedTimeframe);
-        // Data will be refetched automatically due to query key change
-      }
-    },
-    [timeframe, initialTimeframe]
-  );
+  const handleTimeframeChange = useCallback((newTimeframe: string) => {
+    setTimeframe(newTimeframe);
+  }, []);
 
   // Handle filter change
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilters(e.target.value);
   };
 
-  if (isLoading) return <div className={`${isDarkMode ? "text-white" : "text-gray-900"}`}>Loading...</div>;
   if (error) return <div className={`${isDarkMode ? "text-white" : "text-gray-900"}`}>Error loading data</div>;
   if (!data) return null;
 
   // Transform CCXT OHLCV data to the format expected by CandlestickChart
-  const chartData = data.map(
-    ([timestamp, open, high, low, close, volume]: number[]): OHLCVData => ({
-      time: timestamp / 1000, // Convert to seconds
-      open,
-      high,
-      low,
-      close,
-      volume,
-    })
-  );
+  const chartData = data
+    .map(
+      ([timestamp, open, high, low, close, volume]: number[]): OHLCVData => ({
+        time: timestamp.toString(), // Keep as string with full timestamp
+        open,
+        high,
+        low,
+        close,
+        volume,
+      })
+    )
+    // Remove duplicates by time
+    .reduce((acc: OHLCVData[], curr: OHLCVData) => {
+      if (!acc.find((item) => item.time === curr.time)) {
+        acc.push(curr);
+      }
+      return acc;
+    }, [])
+    // Sort by time in ascending order
+    .sort((a: OHLCVData, b: OHLCVData) => parseInt(a.time) - parseInt(b.time));
 
   return (
     <div className={`p-4 rounded-lg shadow h-full w-full flex flex-col ${isDarkMode ? "bg-gray-800" : "bg-white"}`}>
@@ -111,7 +95,7 @@ export const CCXTChart: React.FC<CCXTChartProps> = ({ exchange, symbol, timefram
             } focus:outline-none focus:ring-2 focus:ring-blue-500`}
           />
         </div>
-        {data.length > 0 && (
+        {chartData.length > 0 && (
           <div className="text-right">
             <div className={`text-2xl font-bold ${isDarkMode ? "text-white" : "text-gray-900"}`}>
               ${Number(chartData[chartData.length - 1].close).toFixed(2)}

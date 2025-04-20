@@ -1,7 +1,15 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api.routes import market_data, ai_chat, dashboard, hyperliquid, twitter, ccxt
+from app.api.routes import (
+    market_data,
+    ai_chat,
+    dashboard,
+    hyperliquid,
+    twitter,
+    ccxt,
+    deribit,
+)
 import logging
 import sys
 
@@ -9,8 +17,19 @@ import sys
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout), logging.FileHandler("app.log")],
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler("app.log", mode="a", encoding="utf-8"),
+    ],
 )
+
+# Set log levels for specific modules
+logging.getLogger("app.api").setLevel(logging.DEBUG)
+logging.getLogger("app.api.services").setLevel(logging.DEBUG)
+logging.getLogger("app.api.routes").setLevel(logging.DEBUG)
+logging.getLogger("uvicorn").setLevel(logging.INFO)
+logging.getLogger("fastapi").setLevel(logging.INFO)
+
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
@@ -44,6 +63,7 @@ app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"]
 app.include_router(hyperliquid.router, prefix="/api/hyperliquid", tags=["hyperliquid"])
 app.include_router(twitter.router, prefix="/api/twitter", tags=["twitter"])
 app.include_router(ccxt.router, prefix="/api/ccxt", tags=["ccxt"])
+app.include_router(deribit.router, prefix="/api/deribit", tags=["deribit"])
 
 
 @app.get("/")

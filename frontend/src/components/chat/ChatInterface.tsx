@@ -35,7 +35,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onAddComponent }) => {
       // Simulate API call with a delay
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Mock response
+      // Mock response based on message content
+      if (message.toLowerCase().includes("futures") || message.toLowerCase().includes("premium")) {
+        return {
+          message: "I'll add the Deribit futures table showing premiums and APR.",
+          components: [
+            {
+              type: "DeribitFutures",
+              props: {
+                symbol: "BTC",
+              },
+            },
+          ],
+        };
+      }
+
       return {
         message: "I'll add a ETH price chart to your dashboard.",
         components: [

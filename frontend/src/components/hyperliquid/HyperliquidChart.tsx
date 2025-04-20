@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { CandlestickChart } from "../charts/CandlestickChart";
 import { marketDataApi } from "@/lib/api";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -9,6 +9,23 @@ interface HyperliquidChartProps {
   interval?: string;
   limit?: number;
   currency?: string;
+}
+
+interface MarketData {
+  markPx: number;
+  oraclePx: number;
+  funding: number;
+  openInterest: number;
+  dayNtlVlm: number;
+}
+
+interface CustomCandlestickData {
+  time: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
 }
 
 export const HyperliquidChart: React.FC<HyperliquidChartProps> = ({
@@ -22,27 +39,24 @@ export const HyperliquidChart: React.FC<HyperliquidChartProps> = ({
 
   // Use the provided interval without overriding it
   const [interval, setInterval] = useState(initialInterval);
+
   const {
     data: candles,
-    isLoading,
+    isPending,
     refetch,
-  } = useQuery(
-    ["hyperliquid-candles", symbol, interval, limit],
-    () => marketDataApi.getHistoricalData(symbol, interval, limit),
-    {
-      refetchInterval: 60000, // Refetch every minute
-      staleTime: 30000, // Consider data stale after 30 seconds
-    }
-  );
+  } = useQuery({
+    queryKey: ["hyperliquid-candles", symbol, interval, limit],
+    queryFn: () => marketDataApi.getHistoricalData(symbol, interval, limit),
+    refetchInterval: 60000, // Refetch every minute
+    staleTime: 30000, // Consider data stale after 30 seconds
+  });
 
-  const { data: marketData } = useQuery(
-    ["hyperliquid-market-data", symbol],
-    () => marketDataApi.getMarketData(symbol),
-    {
-      refetchInterval: 10000, // Refetch every 10 seconds
-      staleTime: 5000, // Consider data stale after 5 seconds
-    }
-  );
+  const { data: marketData } = useQuery<MarketData>({
+    queryKey: ["hyperliquid-market-data", symbol],
+    queryFn: () => marketDataApi.getMarketData(symbol),
+    refetchInterval: 10000, // Refetch every 10 seconds
+    staleTime: 5000, // Consider data stale after 5 seconds
+  });
 
   // Handle timeframe change
   const handleTimeframeChange = useCallback(
@@ -77,7 +91,7 @@ export const HyperliquidChart: React.FC<HyperliquidChartProps> = ({
     [interval]
   );
 
-  if (isLoading || !candles) {
+  if (isPending || !candles) {
     return <div className={`${isDarkMode ? "text-white" : "text-gray-900"}`}>Loading...</div>;
   }
 
@@ -105,7 +119,7 @@ export const HyperliquidChart: React.FC<HyperliquidChartProps> = ({
           symbol={symbol}
           currency={currency}
           onTimeframeChange={handleTimeframeChange}
-          isLoading={isLoading}
+          isLoading={isPending}
           height={undefined} // Let it fill the container
         />
       </div>

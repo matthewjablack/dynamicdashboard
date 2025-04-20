@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { useQuery, useMutation } from "react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { ChatBubbleLeftIcon } from "@heroicons/react/24/outline";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -10,6 +10,14 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   components?: any[];
+}
+
+interface ChatResponse {
+  message: string;
+  components: Array<{
+    type: string;
+    props: Record<string, any>;
+  }>;
 }
 
 interface ChatInterfaceProps {
@@ -30,8 +38,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onAddComponent }) => {
     scrollToBottom();
   }, [messages]);
 
-  const { mutate: sendMessage, isLoading } = useMutation(
-    async (message: string) => {
+  const { mutate: sendMessage, isPending } = useMutation({
+    mutationFn: async (message: string): Promise<ChatResponse> => {
       // Simulate API call with a delay
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -65,26 +73,24 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onAddComponent }) => {
         ],
       };
     },
-    {
-      onSuccess: (data) => {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content: data.message,
-            components: data.components,
-          },
-        ]);
+    onSuccess: (data: ChatResponse) => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: data.message,
+          components: data.components,
+        },
+      ]);
 
-        // Add components to dashboard if any
-        if (data.components && data.components.length > 0) {
-          data.components.forEach((component: any) => {
-            onAddComponent(component);
-          });
-        }
-      },
-    }
-  );
+      // Add components to dashboard if any
+      if (data.components && data.components.length > 0) {
+        data.components.forEach((component) => {
+          onAddComponent(component);
+        });
+      }
+    },
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,11 +137,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onAddComponent }) => {
             className={`flex-1 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               theme === "dark" ? "bg-gray-800 text-white border-gray-700" : "border border-gray-300"
             }`}
-            disabled={isLoading}
+            disabled={isPending}
           />
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isPending}
             className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 transition-colors duration-200"
           >
             <ChatBubbleLeftIcon className="h-5 w-5" />

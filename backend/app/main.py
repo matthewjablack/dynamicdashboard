@@ -9,6 +9,7 @@ from app.api.routes import (
     twitter,
     ccxt,
     deribit,
+    economic,
 )
 import logging
 import sys
@@ -66,6 +67,7 @@ app.include_router(hyperliquid.router, prefix="/api/hyperliquid", tags=["hyperli
 app.include_router(twitter.router, prefix="/api/twitter", tags=["twitter"])
 app.include_router(ccxt.router, prefix="/api/ccxt", tags=["ccxt"])
 app.include_router(deribit.router, prefix="/api/deribit", tags=["deribit"])
+app.include_router(economic.router, prefix="/api/economic", tags=["economic"])
 
 
 @app.get("/")

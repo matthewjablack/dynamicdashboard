@@ -22,10 +22,12 @@ class Settings(BaseSettings):
 
     # API Keys
     TWITTER_API_KEY: str
+    FINNHUB_API_KEY: str
 
     class Config:
         env_file = ".env"
         case_sensitive = True
+        env_file_encoding = "utf-8"
 
 
 @lru_cache()

@@ -150,6 +150,24 @@ export const AddComponent: React.FC<AddComponentProps> = ({ onAdd }) => {
       );
     }
 
+    if (field.type === "boolean") {
+      return (
+        <label className="inline-flex items-center mt-1">
+          <input
+            type="checkbox"
+            checked={config[field.name] || field.default}
+            onChange={(e) => handleConfigChange(field.name, e.target.checked)}
+            className={`form-checkbox h-5 w-5 ${
+              theme === "dark"
+                ? "text-blue-500 bg-gray-700 border-gray-600"
+                : "text-blue-600 bg-gray-100 border-gray-300"
+            } rounded focus:ring-blue-500`}
+          />
+          <span className={`ml-2 ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>{field.label}</span>
+        </label>
+      );
+    }
+
     return (
       <input
         key={field.name}

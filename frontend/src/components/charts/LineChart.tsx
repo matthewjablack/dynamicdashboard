@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { createChart, ColorType, Time, IChartApi } from "lightweight-charts";
+import { createChart, ColorType, Time, IChartApi, ISeriesApi, LineStyle, LineSeries } from "lightweight-charts";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface LineChartData {
@@ -30,6 +30,7 @@ export const LineChart: React.FC<LineChartProps> = ({
   const isDarkMode = theme === "dark";
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
+  const seriesRef = useRef<ISeriesApi<"Line"> | null>(null);
 
   useEffect(() => {
     if (!chartContainerRef.current || isLoading || error || !data?.length) return;
@@ -56,16 +57,27 @@ export const LineChart: React.FC<LineChartProps> = ({
 
     chartRef.current = chart;
 
-    const lineSeries = chart.addLineSeries({
+    // Create a new line series
+    const lineSeries = chart.addSeries(LineSeries, {
       color: isDarkMode ? "#26a69a" : "#2962FF",
       lineWidth: 2,
+      lineStyle: LineStyle.Solid,
+      priceFormat: {
+        type: "price",
+        precision: 2,
+        minMove: 0.01,
+      },
     });
 
+    seriesRef.current = lineSeries;
+
+    // Format the data
     const formattedData = data.map((item) => ({
       time: Math.floor(item.time / 1000) as Time,
       value: item.value,
     }));
 
+    // Set the data
     lineSeries.setData(formattedData);
 
     // Fit content
@@ -98,6 +110,9 @@ export const LineChart: React.FC<LineChartProps> = ({
       if (chartRef.current) {
         chartRef.current.remove();
         chartRef.current = null;
+      }
+      if (seriesRef.current) {
+        seriesRef.current = null;
       }
     };
   }, [data, isLoading, error, height, isDarkMode]);

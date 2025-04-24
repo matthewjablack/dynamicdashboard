@@ -10,6 +10,7 @@ from app.api.routes import (
     ccxt,
     deribit,
     economic,
+    vix,
 )
 import logging
 import sys
@@ -68,6 +69,7 @@ app.include_router(twitter.router, prefix="/api/twitter", tags=["twitter"])
 app.include_router(ccxt.router, prefix="/api/ccxt", tags=["ccxt"])
 app.include_router(deribit.router, prefix="/api/deribit", tags=["deribit"])
 app.include_router(economic.router, prefix="/api/economic", tags=["economic"])
+app.include_router(vix.router, prefix="/api/vix", tags=["vix"])
 
 
 @app.get("/")

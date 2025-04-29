@@ -19,10 +19,11 @@ export const AddComponent: React.FC<AddComponentProps> = ({ onAdd }) => {
   const { theme } = useTheme();
   const [selectedType, setSelectedType] = useState<string>("");
   const [config, setConfig] = useState<Record<string, any>>({});
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
-  // Fetch exchanges
+  // Fetch all available exchanges
   const {
-    data: exchanges = [],
+    data: allExchanges = [],
     isLoading: isLoadingExchanges,
     error: exchangesError,
   } = useQuery({
@@ -31,12 +32,12 @@ export const AddComponent: React.FC<AddComponentProps> = ({ onAdd }) => {
       const response = await api.get<string[]>("/api/ccxt/exchanges");
       return response.data;
     },
-    enabled: selectedType === "CCXTChart",
+    enabled: selectedType === "CCXTChart" || selectedType === "PerpetualSwaps",
     retry: 1,
     staleTime: 300000, // Cache for 5 minutes
   });
 
-  // Fetch markets
+  // Fetch markets for CCXTChart
   const {
     data: markets = [],
     isLoading: isLoadingMarkets,
@@ -56,16 +57,30 @@ export const AddComponent: React.FC<AddComponentProps> = ({ onAdd }) => {
     // Reset config when component type changes
     if (selectedType && selectedType in componentRegistry) {
       const defaultConfig: Record<string, any> = {};
-      componentRegistry[selectedType as keyof typeof componentRegistry].configFields.forEach((field) => {
-        defaultConfig[field.name] = field.default;
-      });
+      const componentDef = componentRegistry[selectedType as keyof typeof componentRegistry];
+
+      // Handle special case for PerpetualSwaps
+      if (selectedType === "PerpetualSwaps") {
+        componentDef.configFields.forEach((field) => {
+          // Convert array defaults to comma-separated strings
+          defaultConfig[field.name] = Array.isArray(componentDef.defaultProps[field.name])
+            ? componentDef.defaultProps[field.name].join(",")
+            : field.default;
+        });
+      } else {
+        // Handle other components normally
+        componentDef.configFields.forEach((field) => {
+          defaultConfig[field.name] = field.default;
+        });
+      }
+
       setConfig(defaultConfig);
+      setSearchTerm("");
     }
   }, [selectedType]);
 
   const handleTypeChange = (type: string) => {
     setSelectedType(type);
-    setConfig(componentRegistry[type]?.defaultProps || {});
   };
 
   const handleConfigChange = (field: string, value: any) => {
@@ -73,16 +88,119 @@ export const AddComponent: React.FC<AddComponentProps> = ({ onAdd }) => {
   };
 
   const handleAdd = () => {
+    let processedConfig = { ...config };
+
+    // Special handling for PerpetualSwaps component
+    if (selectedType === "PerpetualSwaps") {
+      // No need to convert strings to arrays here since we're keeping everything as strings
+      processedConfig = config;
+    }
+
     const componentConfig = {
       type: selectedType,
-      props: config,
+      props: processedConfig,
     };
     onAdd(componentConfig);
     setSelectedType("");
     setConfig({});
   };
 
+  const renderMultiSelect = (field: ComponentField, options: string[], selectedValues: string[]) => {
+    const filteredOptions = options.filter(
+      (option) => option.toLowerCase().includes(searchTerm.toLowerCase()) && !selectedValues.includes(option)
+    );
+
+    return (
+      <div className="space-y-2">
+        <div className="flex flex-wrap gap-2 mb-2">
+          {selectedValues.map((value) => (
+            <div
+              key={value}
+              className={`px-2 py-1 rounded-full text-sm flex items-center gap-1 ${
+                theme === "dark" ? "bg-gray-700 text-white" : "bg-gray-200 text-gray-800"
+              }`}
+            >
+              <span>{value}</span>
+              <button
+                onClick={() => {
+                  const newValues = selectedValues.filter((v) => v !== value);
+                  handleConfigChange(field.name, newValues.join(","));
+                }}
+                className="ml-1 text-gray-500 hover:text-gray-700"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search..."
+          className={`w-full px-3 py-2 rounded-md ${
+            theme === "dark"
+              ? "bg-gray-700 text-white placeholder-gray-400"
+              : "bg-white text-gray-900 placeholder-gray-500"
+          } border ${
+            theme === "dark" ? "border-gray-600" : "border-gray-300"
+          } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+        />
+        {searchTerm && (
+          <div
+            className={`mt-2 max-h-48 overflow-y-auto rounded-md border ${
+              theme === "dark" ? "bg-gray-700 border-gray-600" : "bg-white border-gray-300"
+            }`}
+          >
+            {filteredOptions.map((option) => (
+              <button
+                key={option}
+                onClick={() => {
+                  const newValues = [...selectedValues, option];
+                  handleConfigChange(field.name, newValues.join(","));
+                  setSearchTerm("");
+                }}
+                className={`w-full text-left px-3 py-2 hover:bg-blue-500 hover:text-white ${
+                  theme === "dark" ? "text-white" : "text-gray-900"
+                }`}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderField = (field: ComponentField) => {
+    // Special handling for PerpetualSwaps exchanges
+    if (field.name === "exchanges" && selectedType === "PerpetualSwaps") {
+      const defaultValue = Array.isArray(field.default) ? field.default.join(",") : field.default;
+      const selectedExchanges = (config[field.name] || defaultValue || "").split(",").filter(Boolean);
+      return renderMultiSelect(field, allExchanges, selectedExchanges);
+    }
+
+    // Special handling for PerpetualSwaps symbols
+    if (field.name === "symbols" && selectedType === "PerpetualSwaps") {
+      const commonPairs = [
+        "BTC/USDT:USDT",
+        "ETH/USDT:USDT",
+        "SOL/USDT:USDT",
+        "BNB/USDT:USDT",
+        "AVAX/USDT:USDT",
+        "MATIC/USDT:USDT",
+        "DOGE/USDT:USDT",
+        "XRP/USDT:USDT",
+        "ADA/USDT:USDT",
+        "DOT/USDT:USDT",
+      ];
+      const defaultValue = Array.isArray(field.default) ? field.default.join(",") : field.default;
+      const selectedSymbols = (config[field.name] || defaultValue || "").split(",").filter(Boolean);
+      return renderMultiSelect(field, commonPairs, selectedSymbols);
+    }
+
+    // Special handling for CCXTChart exchange
     if (field.name === "exchange" && selectedType === "CCXTChart") {
       return (
         <div>
@@ -96,7 +214,7 @@ export const AddComponent: React.FC<AddComponentProps> = ({ onAdd }) => {
             disabled={isLoadingExchanges}
           >
             <option value="">Select an exchange</option>
-            {exchanges.map((exchange) => (
+            {allExchanges.map((exchange) => (
               <option key={exchange} value={exchange}>
                 {exchange}
               </option>
@@ -107,6 +225,7 @@ export const AddComponent: React.FC<AddComponentProps> = ({ onAdd }) => {
       );
     }
 
+    // Special handling for CCXTChart symbol
     if (field.name === "symbol" && selectedType === "CCXTChart") {
       return (
         <div>

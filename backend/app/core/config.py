@@ -24,6 +24,11 @@ class Settings(BaseSettings):
     TWITTER_API_KEY: str
     FINNHUB_API_KEY: str
 
+    # JWT Settings
+    SECRET_KEY: str = "your-secret-key-here"  # Change in production
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
     class Config:
         env_file = ".env"
         case_sensitive = True

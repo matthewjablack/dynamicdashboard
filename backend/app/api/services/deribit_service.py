@@ -42,6 +42,25 @@ def safe_float(value: Any, default: float = 0.0) -> float:
         return default
 
 
+def tenor_to_minutes(tenor: str) -> float:
+    """Convert tenor string to minutes for sorting."""
+    if tenor == "-":
+        return 0
+
+    total_minutes = 0
+    parts = tenor.split()
+
+    for part in parts:
+        if part.endswith("d"):
+            total_minutes += float(part[:-1]) * 24 * 60
+        elif part.endswith("h"):
+            total_minutes += float(part[:-1]) * 60
+        elif part.endswith("m"):
+            total_minutes += float(part[:-1])
+
+    return total_minutes
+
+
 class DeribitService:
     def __init__(self):
         self.exchange = ccxt.deribit(
@@ -167,9 +186,9 @@ class DeribitService:
                     0
                     if x["instrument"].endswith("PERPETUAL")
                     else 1,  # Put perpetual at the start
-                    float(x["tenor"].split("d")[0])
-                    if x["tenor"] != "-"
-                    else 0,  # Sort by days ascending
+                    tenor_to_minutes(
+                        x["tenor"]
+                    ),  # Convert tenor to minutes for sorting
                 ),
             )
 

@@ -11,13 +11,23 @@ from app.api.routes import (
     deribit,
     economic,
     vix,
+    auth,
 )
+from app.db.session import engine
+from app.models import user as user_model
+from app.models import (
+    dashboard as dashboard_model,
+)  # Rename the import to avoid conflict
 import logging
 import sys
 
+# Create database tables
+user_model.Base.metadata.create_all(bind=engine)
+dashboard_model.Base.metadata.create_all(bind=engine)
+
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,  # Set default level to INFO
+    level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.StreamHandler(sys.stdout),
@@ -61,6 +71,7 @@ async def log_requests(request: Request, call_next):
 
 
 # Include routers
+app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(market_data.router, prefix="/api/market-data", tags=["market-data"])
 app.include_router(ai_chat.router, prefix="/api/chat", tags=["chat"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"])

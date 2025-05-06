@@ -23,11 +23,16 @@ class Settings(BaseSettings):
     # API Keys
     TWITTER_API_KEY: str
     FINNHUB_API_KEY: str
+    FRED_API_KEY: str
 
     # JWT Settings
     SECRET_KEY: str = "your-secret-key-here"  # Change in production
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
+    # Apify
+    APIFY_API_TOKEN: str
+    APIFY_USER_ID: str = ""
 
     class Config:
         env_file = ".env"

@@ -81,19 +81,22 @@ export const CCXTChart: React.FC<CCXTChartProps> = ({ exchange, symbol, timefram
   return (
     <div className={`p-4 rounded-lg shadow h-full w-full flex flex-col ${isDarkMode ? "bg-gray-800" : "bg-white"}`}>
       <div className="flex justify-between items-center mb-4">
-        <div className="flex flex-col gap-2">
-          <h2 className={`text-xl font-bold ${isDarkMode ? "text-white" : "text-gray-900"}`}>{symbol}</h2>
-          <input
-            type="text"
-            value={filters}
-            onChange={handleFilterChange}
-            placeholder="Enter filters (comma-separated)"
-            className={`px-3 py-1 rounded border ${
-              isDarkMode
-                ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-                : "bg-white border-gray-300 text-gray-900 placeholder-gray-500"
-            } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-          />
+        <div className="flex items-center gap-2">
+          <div className="drag-handle cursor-move text-gray-400 hover:text-gray-600">⋮⋮</div>
+          <div className="flex flex-col gap-2">
+            <h2 className={`text-xl font-bold ${isDarkMode ? "text-white" : "text-gray-900"}`}>{symbol}</h2>
+            <input
+              type="text"
+              value={filters}
+              onChange={handleFilterChange}
+              placeholder="Enter filters (comma-separated)"
+              className={`px-3 py-1 rounded border ${
+                isDarkMode
+                  ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                  : "bg-white border-gray-300 text-gray-900 placeholder-gray-500"
+              } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+            />
+          </div>
         </div>
         {chartData.length > 0 && (
           <div className="text-right">

@@ -37,7 +37,7 @@ const MIN_SIZES = {
   default: { w: 4, h: 4, minW: 3, minH: 3 },
   chart: { w: 6, h: 6, minW: 4, minH: 4 },
   small: { w: 3, h: 3, minW: 2, minH: 2 },
-  feed: { w: 6, h: 8, minW: 4, minH: 6 }, // For components like TwitterFeed that need more height
+  feed: { w: 6, h: 8, minW: 2, minH: 6 }, // For components like TwitterFeed that need more height
   perpetualSwaps: { w: 6, h: 3.5, minW: 4, minH: 2.5 }, // Adjusted size for PerpetualSwaps
 };
 

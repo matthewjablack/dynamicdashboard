@@ -12,6 +12,8 @@ from app.api.routes import (
     economic,
     vix,
     auth,
+    truthsocial,
+    fred,
 )
 from app.db.session import engine
 from app.models import user as user_model
@@ -81,6 +83,8 @@ app.include_router(ccxt.router, prefix="/api/ccxt", tags=["ccxt"])
 app.include_router(deribit.router, prefix="/api/deribit", tags=["deribit"])
 app.include_router(economic.router, prefix="/api/economic", tags=["economic"])
 app.include_router(vix.router, prefix="/api/vix", tags=["vix"])
+app.include_router(truthsocial.router, prefix="/api/truthsocial", tags=["truthsocial"])
+app.include_router(fred.router, prefix="/api/fred", tags=["fred"])
 
 
 @app.get("/")

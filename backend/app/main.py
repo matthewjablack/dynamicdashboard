@@ -14,6 +14,7 @@ from app.api.routes import (
     auth,
     truthsocial,
     fred,
+    domains,
 )
 from app.db.session import engine
 from app.models import user as user_model
@@ -57,7 +58,11 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Frontend URL
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:3002",
+    ],  # Frontend URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -85,6 +90,7 @@ app.include_router(economic.router, prefix="/api/economic", tags=["economic"])
 app.include_router(vix.router, prefix="/api/vix", tags=["vix"])
 app.include_router(truthsocial.router, prefix="/api/truthsocial", tags=["truthsocial"])
 app.include_router(fred.router, prefix="/api/fred", tags=["fred"])
+app.include_router(domains.router, prefix="/api/domains", tags=["domains"])
 
 
 @app.get("/")
